@@ -133,14 +133,17 @@ namespace sfc_gen
         bd(5, 2) = -1.0;
 
         Eigen::MatrixX4d hp, gap;
+        // b 初始化为轨迹上点
         Eigen::Vector3d a, b = path[0];
+        // 有效的障碍物点
         std::vector<Eigen::Vector3d> valid_pc;
+
         std::vector<Eigen::Vector3d> bs;
         valid_pc.reserve(points.size());
         for (int i = 1; i < n;)
         {
             a = b;
-            if ((a - path[i]).norm() > progress)
+            if ((a - path[i]).norm() > progress)  // 如果新的点大于了前进距离，就限制到这么大
             {
                 b = (path[i] - a).normalized() * progress + a;
             }
@@ -149,7 +152,7 @@ namespace sfc_gen
                 b = path[i];
                 i++;
             }
-            bs.emplace_back(b);
+            bs.emplace_back(b); //TODO 看起来没什么用 扩展过得前向点保存下来
 
             bd(0, 3) = -std::min(std::max(a(0), b(0)) + range, highCorner(0));
             bd(1, 3) = +std::max(std::min(a(0), b(0)) - range, lowCorner(0));
@@ -157,18 +160,22 @@ namespace sfc_gen
             bd(3, 3) = +std::max(std::min(a(1), b(1)) - range, lowCorner(1));
             bd(4, 3) = -std::min(std::max(a(2), b(2)) + range, highCorner(2));
             bd(5, 3) = +std::max(std::min(a(2), b(2)) - range, lowCorner(2));
-
+            // 重新加载有效点云
             valid_pc.clear();
             for (const Eigen::Vector3d &p : points)
             {
+                // bd本身是6x4的， 前三列是符号列 最后一列是最大最小值
+                // bd的左边三列 * p + 右边一列
+                // 这样就实现了先把允许的障碍放进去
                 if ((bd.leftCols<3>() * p + bd.rightCols<1>()).maxCoeff() < 0.0)
                 {
                     valid_pc.emplace_back(p);
                 }
             }
+            // 将vector放到Eigen里，准备开始分解
             Eigen::Map<const Eigen::Matrix<double, 3, -1, Eigen::ColMajor>> pc(valid_pc[0].data(), 3, valid_pc.size());
-
-            firi::firi(bd, pc, a, b, hp);
+            cout<<"Obs ps size = "<<valid_pc.size()<<endl;
+                firi::firi(bd, pc, a, b, hp);
 
             if (hpolys.size() != 0)
             {

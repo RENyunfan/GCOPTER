@@ -2,15 +2,15 @@ MapTopic:                   '/voxel_map'
 
 TargetTopic:                '/move_base_simple/goal'
 
-DilateRadius:               0.5
+DilateRadius:               0.3
 
-VoxelWidth:                 0.25
+VoxelWidth:                 0.3
 
 MapBound:                   [-25.0, 25.0, -25.0, 25.0, 0.0, 5.0]
 
 TimeoutRRT:                 0.02
 
-MaxVelMag:                  4.0
+MaxVelMag:                  12.0
 
 MaxBdrMag:                  2.1
 
@@ -18,7 +18,7 @@ MaxTiltAngle:               1.05
 
 MinThrust:                  2.0
 
-MaxThrust:                  12.0
+MaxThrust:                  18.0
 
 VehicleMass:                0.61
 
@@ -32,7 +32,7 @@ ParasDrag:                  0.01
 
 SpeedEps:                   0.0001
 
-WeightT:                    20.0
+WeightT:                    1020.0
 
 ChiVec:                     [1.0e+4, 1.0e+4, 1.0e+4, 1.0e+4]
 

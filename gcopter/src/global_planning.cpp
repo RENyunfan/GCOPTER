@@ -20,6 +20,8 @@
 #include <chrono>
 #include <random>
 
+#include "misc/scope_timer.hpp"
+
 struct Config
 {
     std::string mapTopic;
@@ -145,6 +147,8 @@ public:
         if (startGoal.size() == 2)
         {
             std::vector<Eigen::Vector3d> route;
+            TimeConsuming t_("Frontend path gene");
+            t_.start();
             sfc_gen::planPath<voxel_map::VoxelMap>(startGoal[0],
                                                    startGoal[1],
                                                    voxelMap.getOrigin(),
@@ -154,16 +158,18 @@ public:
             std::vector<Eigen::MatrixX4d> hPolys;
             std::vector<Eigen::Vector3d> pc;
             voxelMap.getSurf(pc);
-
-            sfc_gen::convexCover(route,
-                                 pc,
-                                 voxelMap.getOrigin(),
-                                 voxelMap.getCorner(),
-                                 7.0,
-                                 3.0,
-                                 hPolys);
+            t_.stop();
+            TimeConsuming t__("Frontend sfc gene");
+            t__.start();
+            sfc_gen::convexCover(route,     // 前段轨迹
+                                 pc,        // 所有障碍物点
+                                 voxelMap.getOrigin(),   // 地图原点
+                                 voxelMap.getCorner(),  // 地图边界
+                                 7.0,                    //  最大前向距离
+                                 3.0,                      //  走廊的最大bounding box
+                                 hPolys);                      // 输出一组多面体
             sfc_gen::shortCut(hPolys);
-
+            t__.stop();
             if (route.size() > 1)
             {
                 visualizer.visualizePolytope(hPolys);
@@ -201,7 +207,8 @@ public:
                 const int quadratureRes = config.integralIntervs;
 
                 traj.clear();
-
+                TimeConsuming t__("backend minco");
+                t__.start();
                 if (!gcopter.setup(config.weightT,
                                    iniState, finState,
                                    hPolys, INFINITY,
@@ -218,6 +225,7 @@ public:
                 {
                     return;
                 }
+                t__.stop();
 
                 if (traj.getPieceNum() > 0)
                 {
